@@ -2,22 +2,24 @@ const express = require("express");
 const { OpenAI } = require("openai");
 
 const app = express();
-
 app.use(express.json());
+
+// TEMPORARY CONFIGURATION
+// Replace YOUR_HF_TOKEN with your token locally.
+// DO NOT commit the real token to GitHub.
+const HF_TOKEN = process.env.HF_TOKEN || "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";
 
 const ai = new OpenAI({
     baseURL: "https://router.huggingface.co/v1",
-    apiKey: process.env.HF_TOKEN
+    apiKey: HF_TOKEN
 });
 
 app.post("/think", async (req, res) => {
     try {
-
         const situation = req.body.situation;
 
         const response = await ai.chat.completions.create({
             model: "openai/gpt-oss-120b:fastest",
-
             messages: [
                 {
                     role: "system",
@@ -38,56 +40,34 @@ Choose ONE action.
 Reply with ONLY JSON.
 
 Example:
+{"action":"jump"}
 
-{
-  "action": "jump"
-}
+Example:
+{"action":"say","message":"hello"}
 
-Or:
+Example:
+{"action":"walk","x":20,"y":5,"z":10}
 
-{
-  "action": "say",
-  "message": "hello"
-}
-
-Or:
-
-{
-  "action": "walk",
-  "x": 20,
-  "y": 5,
-  "z": 10
-}
-
-Or:
-
-{
-  "action": "create_block"
-}
+Example:
+{"action":"create_block"}
 `
                 },
-
                 {
                     role: "user",
                     content: situation
                 }
             ],
-
             max_tokens: 100
         });
 
-        const text =
-            response.choices[0].message.content
-                .replace(/```json/g, "")
-                .replace(/```/g, "")
-                .trim();
+        const text = response.choices[0].message.content
+            .replace(/```json/g, "")
+            .replace(/```/g, "")
+            .trim();
 
-        const action = JSON.parse(text);
-
-        res.json(action);
+        res.json(JSON.parse(text));
 
     } catch (error) {
-
         console.error(error);
 
         res.status(500).json({
